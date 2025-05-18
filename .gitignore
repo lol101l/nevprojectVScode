@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+pycache/
+*.py[cod]
+
+# Virtual environment
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+*.sqlite
+
+# IDE settings
+.idea/
+.vscode/
+
+# Python virtual environment
+.Python
+
+# Test and coverage
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+
+# MacOS / Linux / Windows junk
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+
+# Flet specific
+assets/
+month3/
