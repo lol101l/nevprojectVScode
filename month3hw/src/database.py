@@ -1,7 +1,7 @@
 import sqlite3
 
 class Database:
-    def __init__(self, db_name="expenses.db"):
+    def init(self, db_name="expenses.db"):
         self.conn = sqlite3.connect(db_name)
         self.create_tables()
 
@@ -19,6 +19,11 @@ class Database:
     def add_expense(self, name, amount):
         query = "INSERT INTO expenses (name, amount) VALUES (?, ?);"
         self.conn.execute(query, (name, amount))
+        self.conn.commit()
+
+    def delete_expense_by_id(self, expense_id):
+        query = "DELETE FROM expenses WHERE id = ?;"
+        self.conn.execute(query, (expense_id,))
         self.conn.commit()
 
     def get_total_sum(self):
