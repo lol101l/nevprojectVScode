@@ -10,7 +10,6 @@ def main(page: ft.Page):
     name_input = ft.TextField(label="Название расхода", width=300)
     amount_input = ft.TextField(label="Сумма расхода", width=300)
 
-    # Включаем прокрутку
     expense_list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
     total_text = ft.Text()
 
@@ -18,11 +17,23 @@ def main(page: ft.Page):
         total = db.get_total_sum()
         total_text.value = f"Общая сумма: {total:.2f} руб."
 
-    def delete_expense(expense_id, control):
-        db.delete_expense_by_id(expense_id)
-        expense_list.controls.remove(control)
+    def load_expenses():
+        expense_list.controls.clear()
+        for expense_id, name, amount in db.get_all_expenses():
+            def make_delete_handler(exp_id):
+                return lambda e: delete_expense(exp_id)
+
+            expense_row = ft.Row([
+                ft.Text(f"{name}: {amount:.2f} руб."),
+                ft.IconButton(icon=ft.icons.DELETE, on_click=make_delete_handler(expense_id))
+            ])
+            expense_list.controls.append(expense_row)
         update_total()
         page.update()
+
+    def delete_expense(expense_id):
+        db.delete_expense_by_id(expense_id)
+        load_expenses()
 
     def add_expense(e):
         name = name_input.value
@@ -34,25 +45,14 @@ def main(page: ft.Page):
             return
 
         db.add_expense(name, amount)
-
-        # Получим последний ID (самый новый)
-        expense_id = db.conn.execute("SELECT last_insert_rowid();").fetchone()[0]
-
-        expense_row = ft.Row([
-            ft.Text(f"{name}: {amount:.2f} руб."),
-            ft.IconButton(icon=ft.icons.DELETE, on_click=lambda e: delete_expense(expense_id, expense_row))
-        ])
-
-        expense_list.controls.append(expense_row)
         name_input.value = ""
         amount_input.value = ""
         amount_input.error_text = None
-        update_total()
-        page.update()
+        load_expenses()
 
     add_button = ft.ElevatedButton(text="Добавить", on_click=add_expense)
-    update_total()
 
+    load_expenses()
     page.add(title, name_input, amount_input, add_button, expense_list, total_text)
 
 ft.app(target=main)

@@ -1,7 +1,7 @@
 import sqlite3
 
 class Database:
-    def init(self, db_name="expenses.db"):
+    def __init__(self, db_name="expenses.db"):
         self.conn = sqlite3.connect(db_name)
         self.create_tables()
 
@@ -31,3 +31,7 @@ class Database:
         cursor = self.conn.execute(query)
         result = cursor.fetchone()
         return result[0] if result[0] is not None else 0.0
+
+    def get_all_expenses(self):
+        query = "SELECT id, name, amount FROM expenses;"
+        return self.conn.execute(query).fetchall()
