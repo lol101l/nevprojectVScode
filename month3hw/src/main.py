@@ -7,52 +7,90 @@ def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.START
 
     title = ft.Text("Ваши расходы", size=30)
-    name_input = ft.TextField(label="Название расхода", width=300)
-    amount_input = ft.TextField(label="Сумма расхода", width=300)
+    name_input = ft.TextField(label="Название", width=300)
+    amount_input = ft.TextField(label="Сумма", width=300)
 
-    expense_list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
-    total_text = ft.Text()
+    list_exp = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
+    txt_total = ft.Text()
 
     def update_total():
-        total = db.get_total_sum()
-        total_text.value = f"Общая сумма: {total:.2f} руб."
-
-    def load_expenses():
-        expense_list.controls.clear()
-        for expense_id, name, amount in db.get_all_expenses():
-            def make_delete_handler(exp_id):
-                return lambda e: delete_expense(exp_id)
-
-            expense_row = ft.Row([
-                ft.Text(f"{name}: {amount:.2f} руб."),
-                ft.IconButton(icon=ft.icons.DELETE, on_click=make_delete_handler(expense_id))
-            ])
-            expense_list.controls.append(expense_row)
-        update_total()
+        txt_total.value = "Общая сумма: " + str(db.get_total()) + " руб."
         page.update()
 
-    def delete_expense(expense_id):
-        db.delete_expense_by_id(expense_id)
-        load_expenses()
+    def load_expenses():
+        list_exp.controls.clear()
+        for exp_id, name, amt in db.get_all():
+            row = make_expense_row(exp_id, name, amt)
+            list_exp.controls.append(row)
+        update_total()
+
+    def make_expense_row(exp_id, name, amt):
+        text = ft.Text(f"{name}: {amt} руб.")
+
+        def delete(e):
+            db.delete(exp_id)
+            load_expenses()
+
+        def edit(e):
+            name_field = ft.TextField(label="Название", value=name)
+            amt_field = ft.TextField(label="Сумма", value=str(amt))
+
+            def save_edit(btn):
+                try:
+                    new_amt = float(amt_field.value)
+                    db.update(exp_id, name_field.value, new_amt)
+                    dlg.open = False
+                    load_expenses()
+                except:
+                    amt_field.error_text = "Ошибка в числе"
+                    dlg.update()
+
+            dlg.content = ft.Column([
+                name_field,
+                amt_field
+            ])
+            dlg.actions = [
+                ft.TextButton("Сохранить", on_click=save_edit),
+                ft.TextButton("Отмена", on_click=lambda _: close_dlg())
+            ]
+            dlg.open = True
+            page.update()
+
+        return ft.Row([
+            text,
+            ft.IconButton(ft.icons.EDIT, on_click=edit),
+            ft.IconButton(ft.icons.DELETE, on_click=delete)
+        ])
+
+    def close_dlg():
+        dlg.open = False
+        page.update()
 
     def add_expense(e):
         name = name_input.value
         try:
-            amount = float(amount_input.value)
-        except ValueError:
-            amount_input.error_text = "Введите корректное число"
+            amt = float(amount_input.value)
+            db.add(name, amt)
+            name_input.value = ""
+            amount_input.value = ""
+            load_expenses()
+        except:
+            amount_input.error_text = "Ошибка"
             page.update()
-            return
 
-        db.add_expense(name, amount)
-        name_input.value = ""
-        amount_input.value = ""
-        amount_input.error_text = None
-        load_expenses()
-
-    add_button = ft.ElevatedButton(text="Добавить", on_click=add_expense)
+    btn_add = ft.ElevatedButton("Добавить", on_click=add_expense)
+    dlg = ft.AlertDialog(open=False)
+    page.dialog = dlg
 
     load_expenses()
-    page.add(title, name_input, amount_input, add_button, expense_list, total_text)
+
+    page.add(
+        title,
+        name_input,
+        amount_input,
+        btn_add,
+        list_exp,
+        txt_total
+    )
 
 ft.app(target=main)
